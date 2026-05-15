@@ -69,3 +69,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - Keep cloud-native basics from the start: structured logging middleware, request IDs, status/latency fields, and safe logs with no secrets or sensitive operational data.
 - Use simple but consistent error handling. Public API errors should have one response shape, safe messages, and clear mapping from validation/not-found/internal failures.
 - Work issue-first. Use GitHub issues as the source of implementation scope, and treat the core backend repository `STDS_backend_go` as the reference point for compatible STDS architecture and conventions.
+
+Follow [`docs/.rules/coding-style.md`](docs/.rules/coding-style.md) for implementation rules,
+[`docs/.rules/testing.md`](docs/.rules/testing.md) for test rules,
+[`CICD.md`](CICD.md) for branch/deployment guardrails, and
+[`ARCHITECTURE.md`](ARCHITECTURE.md) for the lightweight service boundary.
