@@ -21,5 +21,6 @@ func NewRouter(deps Dependencies) *gin.Engine {
 
 	router.Use(requestIDMiddleware(), structuredLoggingMiddleware(logger))
 	router.GET("/health", handleHealth(deps.HealthChecker))
+	router.NoRoute(writeNotFoundError)
 	return router
 }

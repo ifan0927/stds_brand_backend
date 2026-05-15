@@ -51,6 +51,7 @@ func TestHealthReturnsSafeUnavailableWhenDatabaseFails(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/health", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
 
 	router.ServeHTTP(recorder, request)
 
@@ -68,22 +69,108 @@ func TestHealthReturnsSafeUnavailableWhenDatabaseFails(t *testing.T) {
 	if body.Error.Message != "Service unavailable." {
 		t.Fatalf("expected safe message, got %q", body.Error.Message)
 	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
 	if containsAny(recorder.Body.String(), []string{"postgres://", "password", "localhost/db"}) {
 		t.Fatalf("response leaked database details: %s", recorder.Body.String())
 	}
 }
 
-func TestHealthzIsNotRegistered(t *testing.T) {
+func TestUnmatchedRouteReturnsPublicNotFoundError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/healthz", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
 
 	router.ServeHTTP(recorder, request)
 
 	if recorder.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "NOT_FOUND" {
+		t.Fatalf("expected NOT_FOUND, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Not found." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+}
+
+func TestPublicErrorHelperWritesValidationErrorShape(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
+	router.GET("/test-validation", func(c *gin.Context) {
+		writeValidationError(c)
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/test-validation", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusBadRequest {
+		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "VALIDATION_FAILED" {
+		t.Fatalf("expected VALIDATION_FAILED, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Invalid request." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+}
+
+func TestPublicErrorHelperWritesSafeInternalErrorShape(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
+	router.GET("/test-internal", func(c *gin.Context) {
+		_ = errors.New("sql: password=secret failed")
+		writeInternalError(c)
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/test-internal", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusInternalServerError {
+		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "INTERNAL_ERROR" {
+		t.Fatalf("expected INTERNAL_ERROR, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Internal server error." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+	if containsAny(recorder.Body.String(), []string{"sql:", "password=secret"}) {
+		t.Fatalf("response leaked internal details: %s", recorder.Body.String())
 	}
 }
 

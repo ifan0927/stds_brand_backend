@@ -62,6 +62,7 @@ All public API errors use the same response shape:
 | Code | Meaning |
 | --- | --- |
 | `VALIDATION_FAILED` | Request parameters are invalid. |
+| `NOT_FOUND` | The requested public API route or resource was not found. |
 | `SERVICE_UNAVAILABLE` | A required dependency, such as the readonly database, is unavailable. |
 | `INTERNAL_ERROR` | An unexpected server error occurred. |
 
