@@ -2,37 +2,38 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 var errReadonlyDatabaseNotConfigured = errors.New("readonly database is not configured")
 
 type ReadonlyHealthChecker struct {
-	pool *pgxpool.Pool
+	db *sql.DB
 }
 
-func NewReadonlyHealthChecker(ctx context.Context, databaseURL string) (*ReadonlyHealthChecker, error) {
+func NewReadonlyHealthChecker(_ context.Context, databaseURL string) (*ReadonlyHealthChecker, error) {
 	if databaseURL == "" {
 		return &ReadonlyHealthChecker{}, nil
 	}
 
-	pool, err := pgxpool.New(ctx, databaseURL)
+	db, err := sql.Open("pgx", databaseURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ReadonlyHealthChecker{pool: pool}, nil
+	return &ReadonlyHealthChecker{db: db}, nil
 }
 
 func (checker *ReadonlyHealthChecker) Check(ctx context.Context) error {
-	if checker == nil || checker.pool == nil {
+	if checker == nil || checker.db == nil {
 		return errReadonlyDatabaseNotConfigured
 	}
 
 	for _, query := range readonlyHealthQueries {
-		if _, err := checker.pool.Exec(ctx, query); err != nil {
+		if _, err := checker.db.ExecContext(ctx, query); err != nil {
 			return err
 		}
 	}
@@ -40,11 +41,18 @@ func (checker *ReadonlyHealthChecker) Check(ctx context.Context) error {
 	return nil
 }
 
+func (checker *ReadonlyHealthChecker) DB() *sql.DB {
+	if checker == nil {
+		return nil
+	}
+	return checker.db
+}
+
 func (checker *ReadonlyHealthChecker) Close() {
-	if checker == nil || checker.pool == nil {
+	if checker == nil || checker.db == nil {
 		return
 	}
-	checker.pool.Close()
+	_ = checker.db.Close()
 }
 
 var readonlyHealthQueries = []string{

@@ -11,8 +11,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ifan0927/stds_brand_backend/internal/application"
 )
 
 type fakeHealthChecker struct {
@@ -21,6 +23,15 @@ type fakeHealthChecker struct {
 
 func (checker fakeHealthChecker) Check(context.Context) error {
 	return checker.err
+}
+
+type fakeBrandProfileService struct {
+	profile *application.BrandProfile
+	err     error
+}
+
+func (service fakeBrandProfileService) GetBrandProfile(context.Context) (*application.BrandProfile, error) {
+	return service.profile, service.err
 }
 
 func TestHealthReturnsOKWhenDatabaseIsReady(t *testing.T) {
@@ -263,6 +274,115 @@ func TestStructuredLoggingMiddlewareWritesSafeRequestFields(t *testing.T) {
 	}
 	if containsAny(logs.String(), []string{"token=secret", "postgres://", "password"}) {
 		t.Fatalf("log leaked sensitive data: %s", logs.String())
+	}
+}
+
+func TestBrandProfileReturnsApprovedProfile(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	phone := "02-1234-5678"
+	email := "hello@example.com"
+	address := "台北市中正區範例路 1 號"
+	router := NewRouter(Dependencies{
+		HealthChecker: fakeHealthChecker{},
+		BrandProfileService: fakeBrandProfileService{profile: &application.BrandProfile{
+			BrandName:      "STDS",
+			ContactPhone:   &phone,
+			ContactEmail:   &email,
+			ContactAddress: &address,
+			UpdatedAt:      time.Date(2026, 5, 15, 12, 0, 0, 0, time.UTC),
+		}},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/profile", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+
+	var body brandProfileResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Profile == nil {
+		t.Fatal("expected profile response")
+	}
+	if body.Profile.BrandName != "STDS" {
+		t.Fatalf("expected brand name STDS, got %q", body.Profile.BrandName)
+	}
+	if body.Profile.ContactPhone == nil || *body.Profile.ContactPhone != phone {
+		t.Fatalf("expected contact phone %q, got %#v", phone, body.Profile.ContactPhone)
+	}
+	if body.Profile.ContactEmail == nil || *body.Profile.ContactEmail != email {
+		t.Fatalf("expected contact email %q, got %#v", email, body.Profile.ContactEmail)
+	}
+	if body.Profile.ContactAddress == nil || *body.Profile.ContactAddress != address {
+		t.Fatalf("expected contact address %q, got %#v", address, body.Profile.ContactAddress)
+	}
+	if body.Profile.UpdatedAt != "2026-05-15T12:00:00Z" {
+		t.Fatalf("expected updated_at RFC3339, got %q", body.Profile.UpdatedAt)
+	}
+}
+
+func TestBrandProfileReturnsNullWhenNoApprovedProfileExists(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker:       fakeHealthChecker{},
+		BrandProfileService: fakeBrandProfileService{},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/profile", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+
+	var body brandProfileResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Profile != nil {
+		t.Fatalf("expected null profile, got %#v", body.Profile)
+	}
+}
+
+func TestBrandProfileReturnsSafeUnavailableWhenRepositoryFails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker:       fakeHealthChecker{},
+		BrandProfileService: fakeBrandProfileService{err: errors.New("sql: password=secret failed")},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/profile", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "SERVICE_UNAVAILABLE" {
+		t.Fatalf("expected SERVICE_UNAVAILABLE, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Service unavailable." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+	if containsAny(recorder.Body.String(), []string{"sql:", "password=secret"}) {
+		t.Fatalf("response leaked internal details: %s", recorder.Body.String())
 	}
 }
 

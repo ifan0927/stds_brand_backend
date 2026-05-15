@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/ifan0927/stds_brand_backend/internal/application"
 	"github.com/ifan0927/stds_brand_backend/internal/config"
 	brandhttp "github.com/ifan0927/stds_brand_backend/internal/http"
 	"github.com/ifan0927/stds_brand_backend/internal/platform/database"
@@ -26,9 +27,15 @@ func main() {
 	}
 	defer checker.Close()
 
+	brandProfileRepository := database.NewBrandProfileRepository(checker.DB())
+	brandProfileService := application.NewBrandProfileService(brandProfileRepository)
+
 	server := &http.Server{
-		Addr:              ":" + cfg.AppPort,
-		Handler:           brandhttp.NewRouter(brandhttp.Dependencies{HealthChecker: checker}),
+		Addr: ":" + cfg.AppPort,
+		Handler: brandhttp.NewRouter(brandhttp.Dependencies{
+			HealthChecker:       checker,
+			BrandProfileService: brandProfileService,
+		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 

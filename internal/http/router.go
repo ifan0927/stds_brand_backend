@@ -8,8 +8,9 @@ import (
 )
 
 type Dependencies struct {
-	HealthChecker HealthChecker
-	Logger        *slog.Logger
+	HealthChecker       HealthChecker
+	BrandProfileService BrandProfileService
+	Logger              *slog.Logger
 }
 
 func NewRouter(deps Dependencies) *gin.Engine {
@@ -21,6 +22,7 @@ func NewRouter(deps Dependencies) *gin.Engine {
 
 	router.Use(requestIDMiddleware(), structuredLoggingMiddleware(logger))
 	router.GET("/health", handleHealth(deps.HealthChecker))
+	router.GET("/api/v1/brand/profile", handleBrandProfile(deps.BrandProfileService))
 	router.NoRoute(writeNotFoundError)
 	return router
 }
