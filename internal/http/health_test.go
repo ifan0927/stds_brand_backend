@@ -34,6 +34,15 @@ func (service fakeBrandProfileService) GetBrandProfile(context.Context) (*applic
 	return service.profile, service.err
 }
 
+type fakeFAQService struct {
+	items []application.FAQItem
+	err   error
+}
+
+func (service fakeFAQService) ListFAQItems(context.Context) ([]application.FAQItem, error) {
+	return service.items, service.err
+}
+
 func TestHealthReturnsOKWhenDatabaseIsReady(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -360,6 +369,114 @@ func TestBrandProfileReturnsSafeUnavailableWhenRepositoryFails(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/profile", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "SERVICE_UNAVAILABLE" {
+		t.Fatalf("expected SERVICE_UNAVAILABLE, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Service unavailable." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+	if containsAny(recorder.Body.String(), []string{"sql:", "password=secret"}) {
+		t.Fatalf("response leaked internal details: %s", recorder.Body.String())
+	}
+}
+
+func TestFAQsReturnApprovedItems(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker: fakeHealthChecker{},
+		FAQService: fakeFAQService{items: []application.FAQItem{
+			{
+				Question:  "如何預約看房？",
+				Answer:    "請透過公開聯絡方式與我們確認可預約時段。",
+				SortOrder: 10,
+			},
+			{
+				Question:  "是否可以線上詢問？",
+				Answer:    "可以，請使用公開聯絡方式。",
+				SortOrder: 20,
+			},
+		}},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/faqs", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+
+	var body faqResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(body.Items) != 2 {
+		t.Fatalf("expected 2 FAQ items, got %d", len(body.Items))
+	}
+	if body.Items[0].Question != "如何預約看房？" {
+		t.Fatalf("expected first question, got %q", body.Items[0].Question)
+	}
+	if body.Items[0].Answer != "請透過公開聯絡方式與我們確認可預約時段。" {
+		t.Fatalf("expected first answer, got %q", body.Items[0].Answer)
+	}
+	if body.Items[0].SortOrder != 10 {
+		t.Fatalf("expected first sort order 10, got %d", body.Items[0].SortOrder)
+	}
+}
+
+func TestFAQsReturnEmptyListWhenNoApprovedItemsExist(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker: fakeHealthChecker{},
+		FAQService:    fakeFAQService{},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/faqs", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), `"items":[]`) {
+		t.Fatalf("expected empty items list, got %s", recorder.Body.String())
+	}
+
+	var body faqResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(body.Items) != 0 {
+		t.Fatalf("expected empty FAQ list, got %#v", body.Items)
+	}
+}
+
+func TestFAQsReturnSafeUnavailableWhenRepositoryFails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker: fakeHealthChecker{},
+		FAQService:    fakeFAQService{err: errors.New("sql: password=secret failed")},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/faqs", nil)
 	request.Header.Set(requestIDHeader, "brand-request-123")
 
 	router.ServeHTTP(recorder, request)

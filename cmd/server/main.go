@@ -29,12 +29,15 @@ func main() {
 
 	brandProfileRepository := database.NewBrandProfileRepository(checker.DB())
 	brandProfileService := application.NewBrandProfileService(brandProfileRepository)
+	faqRepository := database.NewFAQRepository(checker.DB())
+	faqService := application.NewFAQService(faqRepository)
 
 	server := &http.Server{
 		Addr: ":" + cfg.AppPort,
 		Handler: brandhttp.NewRouter(brandhttp.Dependencies{
 			HealthChecker:       checker,
 			BrandProfileService: brandProfileService,
+			FAQService:          faqService,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
