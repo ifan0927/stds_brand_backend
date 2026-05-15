@@ -8,11 +8,13 @@ const (
 	defaultAppPort = "8080"
 )
 
+// Config contains runtime configuration for the brand backend.
 type Config struct {
 	AppPort                  string
 	BrandReadonlyDatabaseURL string
 }
 
+// Load reads runtime configuration from the environment.
 func Load() Config {
 	return Config{
 		AppPort:                  stringWithDefault(os.Getenv("APP_PORT"), defaultAppPort),

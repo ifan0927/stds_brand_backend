@@ -10,7 +10,9 @@ import (
 
 const healthCheckTimeout = 2 * time.Second
 
+// HealthChecker verifies whether the service dependency is ready.
 type HealthChecker interface {
+	// Check returns an error when the service dependency is unavailable.
 	Check(ctx context.Context) error
 }
 

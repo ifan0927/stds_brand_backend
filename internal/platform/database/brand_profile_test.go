@@ -11,6 +11,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
+// TestBrandProfileRepositoryScansApprovedProfile verifies brand profile row scanning.
 func TestBrandProfileRepositoryScansApprovedProfile(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -49,6 +50,7 @@ func TestBrandProfileRepositoryScansApprovedProfile(t *testing.T) {
 	}
 }
 
+// TestBrandProfileRepositoryReturnsNilWhenNoApprovedProfileExists verifies empty brand profile results.
 func TestBrandProfileRepositoryReturnsNilWhenNoApprovedProfileExists(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -64,6 +66,7 @@ func TestBrandProfileRepositoryReturnsNilWhenNoApprovedProfileExists(t *testing.
 	}
 }
 
+// TestBrandProfileRepositoryReturnsScanError verifies brand profile scan error propagation.
 func TestBrandProfileRepositoryReturnsScanError(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -86,6 +89,7 @@ func TestBrandProfileRepositoryReturnsScanError(t *testing.T) {
 	}
 }
 
+// TestBrandProfileRepositoryReturnsDatabaseError verifies brand profile query error propagation.
 func TestBrandProfileRepositoryReturnsDatabaseError(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()

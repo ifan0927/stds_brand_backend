@@ -9,6 +9,7 @@ import (
 	"github.com/DATA-DOG/go-sqlmock"
 )
 
+// TestFAQRepositoryScansApprovedItems verifies FAQ row scanning.
 func TestFAQRepositoryScansApprovedItems(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -40,6 +41,7 @@ func TestFAQRepositoryScansApprovedItems(t *testing.T) {
 	}
 }
 
+// TestFAQRepositoryReturnsEmptyListWhenNoApprovedItemsExist verifies empty FAQ results.
 func TestFAQRepositoryReturnsEmptyListWhenNoApprovedItemsExist(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -59,6 +61,7 @@ func TestFAQRepositoryReturnsEmptyListWhenNoApprovedItemsExist(t *testing.T) {
 	}
 }
 
+// TestFAQRepositoryReturnsScanError verifies FAQ scan error propagation.
 func TestFAQRepositoryReturnsScanError(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -79,6 +82,7 @@ func TestFAQRepositoryReturnsScanError(t *testing.T) {
 	}
 }
 
+// TestFAQRepositoryReturnsRowsError verifies FAQ row iteration error propagation.
 func TestFAQRepositoryReturnsRowsError(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()
@@ -102,6 +106,7 @@ func TestFAQRepositoryReturnsRowsError(t *testing.T) {
 	}
 }
 
+// TestFAQRepositoryReturnsDatabaseError verifies FAQ query error propagation.
 func TestFAQRepositoryReturnsDatabaseError(t *testing.T) {
 	db, mock, cleanup := newMockDB(t)
 	defer cleanup()

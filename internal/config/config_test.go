@@ -2,6 +2,7 @@ package config
 
 import "testing"
 
+// TestLoadUsesDefaultsAndEnvironment verifies environment-backed configuration loading.
 func TestLoadUsesDefaultsAndEnvironment(t *testing.T) {
 	t.Setenv("APP_PORT", "")
 	t.Setenv("BRAND_READONLY_DATABASE_URL", "postgres://brand_readonly:brand_readonly@localhost:5432/stds_backend?sslmode=disable")

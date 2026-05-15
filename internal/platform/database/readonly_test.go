@@ -5,6 +5,7 @@ import (
 	"testing"
 )
 
+// TestReadonlyHealthCheckerWithoutDatabaseURLIsUnavailable verifies missing database configuration.
 func TestReadonlyHealthCheckerWithoutDatabaseURLIsUnavailable(t *testing.T) {
 	checker, err := NewReadonlyHealthChecker(context.Background(), "")
 	if err != nil {

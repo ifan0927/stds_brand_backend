@@ -9,14 +9,17 @@ import (
 
 const brandProfileQuery = `SELECT brand_name, contact_phone, contact_email, contact_address, updated_at FROM approved_brand_profile_v1 LIMIT 1`
 
+// BrandProfileRepository reads the approved brand profile from the readonly database.
 type BrandProfileRepository struct {
 	db *sql.DB
 }
 
+// NewBrandProfileRepository builds a BrandProfileRepository with the given database handle.
 func NewBrandProfileRepository(db *sql.DB) BrandProfileRepository {
 	return BrandProfileRepository{db: db}
 }
 
+// GetBrandProfile returns the approved brand profile from the readonly database.
 func (repository BrandProfileRepository) GetBrandProfile(ctx context.Context) (*application.BrandProfile, error) {
 	if repository.db == nil {
 		return nil, errReadonlyDatabaseNotConfigured

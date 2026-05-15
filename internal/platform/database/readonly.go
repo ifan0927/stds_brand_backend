@@ -10,10 +10,12 @@ import (
 
 var errReadonlyDatabaseNotConfigured = errors.New("readonly database is not configured")
 
+// ReadonlyHealthChecker checks readonly database connectivity and approved views.
 type ReadonlyHealthChecker struct {
 	db *sql.DB
 }
 
+// NewReadonlyHealthChecker opens a readonly database health checker.
 func NewReadonlyHealthChecker(_ context.Context, databaseURL string) (*ReadonlyHealthChecker, error) {
 	if databaseURL == "" {
 		return &ReadonlyHealthChecker{}, nil
@@ -27,6 +29,7 @@ func NewReadonlyHealthChecker(_ context.Context, databaseURL string) (*ReadonlyH
 	return &ReadonlyHealthChecker{db: db}, nil
 }
 
+// Check verifies that required readonly database views are reachable.
 func (checker *ReadonlyHealthChecker) Check(ctx context.Context) error {
 	if checker == nil || checker.db == nil {
 		return errReadonlyDatabaseNotConfigured
@@ -41,6 +44,7 @@ func (checker *ReadonlyHealthChecker) Check(ctx context.Context) error {
 	return nil
 }
 
+// DB returns the underlying readonly database handle.
 func (checker *ReadonlyHealthChecker) DB() *sql.DB {
 	if checker == nil {
 		return nil
@@ -48,6 +52,7 @@ func (checker *ReadonlyHealthChecker) DB() *sql.DB {
 	return checker.db
 }
 
+// Close releases the readonly database handle.
 func (checker *ReadonlyHealthChecker) Close() {
 	if checker == nil || checker.db == nil {
 		return

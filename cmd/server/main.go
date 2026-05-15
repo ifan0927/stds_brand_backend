@@ -31,13 +31,16 @@ func main() {
 	brandProfileService := application.NewBrandProfileService(brandProfileRepository)
 	faqRepository := database.NewFAQRepository(checker.DB())
 	faqService := application.NewFAQService(faqRepository)
+	propertyAvailabilityRepository := database.NewPropertyAvailabilityRepository(checker.DB())
+	propertyAvailabilityService := application.NewPropertyAvailabilityService(propertyAvailabilityRepository)
 
 	server := &http.Server{
 		Addr: ":" + cfg.AppPort,
 		Handler: brandhttp.NewRouter(brandhttp.Dependencies{
-			HealthChecker:       checker,
-			BrandProfileService: brandProfileService,
-			FAQService:          faqService,
+			HealthChecker:               checker,
+			BrandProfileService:         brandProfileService,
+			FAQService:                  faqService,
+			PropertyAvailabilityService: propertyAvailabilityService,
 		}),
 		ReadHeaderTimeout: 5 * time.Second,
 	}

@@ -11,7 +11,9 @@ import (
 
 const faqTimeout = 2 * time.Second
 
+// FAQService provides approved FAQ items to HTTP handlers.
 type FAQService interface {
+	// ListFAQItems returns approved FAQ items.
 	ListFAQItems(ctx context.Context) ([]application.FAQItem, error)
 }
 

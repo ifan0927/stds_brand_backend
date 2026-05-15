@@ -9,14 +9,17 @@ import (
 
 const faqItemsQuery = `SELECT question, answer, sort_order FROM approved_brand_faq_items_v1 ORDER BY sort_order`
 
+// FAQRepository reads approved FAQ items from the readonly database.
 type FAQRepository struct {
 	db *sql.DB
 }
 
+// NewFAQRepository builds an FAQRepository with the given database handle.
 func NewFAQRepository(db *sql.DB) FAQRepository {
 	return FAQRepository{db: db}
 }
 
+// ListFAQItems returns approved FAQ items from the readonly database.
 func (repository FAQRepository) ListFAQItems(ctx context.Context) ([]application.FAQItem, error) {
 	if repository.db == nil {
 		return nil, errReadonlyDatabaseNotConfigured

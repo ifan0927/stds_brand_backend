@@ -11,10 +11,12 @@ type fakeFAQRepository struct {
 	err   error
 }
 
+// ListFAQItems returns fake FAQ repository results.
 func (repository fakeFAQRepository) ListFAQItems(context.Context) ([]FAQItem, error) {
 	return repository.items, repository.err
 }
 
+// TestFAQServiceReturnsRepositoryItems verifies that the FAQ service returns repository items.
 func TestFAQServiceReturnsRepositoryItems(t *testing.T) {
 	items := []FAQItem{
 		{
@@ -36,6 +38,7 @@ func TestFAQServiceReturnsRepositoryItems(t *testing.T) {
 	}
 }
 
+// TestFAQServiceReturnsDependencyUnavailableWithoutRepository verifies the nil repository error path.
 func TestFAQServiceReturnsDependencyUnavailableWithoutRepository(t *testing.T) {
 	items, err := NewFAQService(nil).ListFAQItems(context.Background())
 	if !errors.Is(err, ErrDependencyUnavailable) {

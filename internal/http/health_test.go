@@ -21,6 +21,7 @@ type fakeHealthChecker struct {
 	err error
 }
 
+// Check returns the configured fake health check error.
 func (checker fakeHealthChecker) Check(context.Context) error {
 	return checker.err
 }
@@ -30,6 +31,7 @@ type fakeBrandProfileService struct {
 	err     error
 }
 
+// GetBrandProfile returns fake brand profile service results.
 func (service fakeBrandProfileService) GetBrandProfile(context.Context) (*application.BrandProfile, error) {
 	return service.profile, service.err
 }
@@ -39,10 +41,22 @@ type fakeFAQService struct {
 	err   error
 }
 
+// ListFAQItems returns fake FAQ service results.
 func (service fakeFAQService) ListFAQItems(context.Context) ([]application.FAQItem, error) {
 	return service.items, service.err
 }
 
+type fakePropertyAvailabilityService struct {
+	items []application.PropertyAvailability
+	err   error
+}
+
+// ListPropertyAvailability returns fake property availability service results.
+func (service fakePropertyAvailabilityService) ListPropertyAvailability(context.Context) ([]application.PropertyAvailability, error) {
+	return service.items, service.err
+}
+
+// TestHealthReturnsOKWhenDatabaseIsReady verifies the healthy response path.
 func TestHealthReturnsOKWhenDatabaseIsReady(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -65,6 +79,7 @@ func TestHealthReturnsOKWhenDatabaseIsReady(t *testing.T) {
 	}
 }
 
+// TestHealthReturnsSafeUnavailableWhenDatabaseFails verifies the safe unavailable health response.
 func TestHealthReturnsSafeUnavailableWhenDatabaseFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{err: errors.New("postgres://user:password@localhost/db failed")}})
@@ -97,6 +112,7 @@ func TestHealthReturnsSafeUnavailableWhenDatabaseFails(t *testing.T) {
 	}
 }
 
+// TestUnmatchedRouteReturnsPublicNotFoundError verifies the public not-found error shape.
 func TestUnmatchedRouteReturnsPublicNotFoundError(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -126,6 +142,7 @@ func TestUnmatchedRouteReturnsPublicNotFoundError(t *testing.T) {
 	}
 }
 
+// TestPublicErrorHelperWritesValidationErrorShape verifies the validation error response shape.
 func TestPublicErrorHelperWritesValidationErrorShape(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -158,6 +175,7 @@ func TestPublicErrorHelperWritesValidationErrorShape(t *testing.T) {
 	}
 }
 
+// TestPublicErrorHelperWritesSafeInternalErrorShape verifies the internal error response shape.
 func TestPublicErrorHelperWritesSafeInternalErrorShape(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -194,6 +212,7 @@ func TestPublicErrorHelperWritesSafeInternalErrorShape(t *testing.T) {
 	}
 }
 
+// TestRequestIDMiddlewarePreservesIncomingRequestID verifies accepted request ID propagation.
 func TestRequestIDMiddlewarePreservesIncomingRequestID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -209,6 +228,7 @@ func TestRequestIDMiddlewarePreservesIncomingRequestID(t *testing.T) {
 	}
 }
 
+// TestRequestIDMiddlewareGeneratesRequestIDWhenMissing verifies generated request IDs.
 func TestRequestIDMiddlewareGeneratesRequestIDWhenMissing(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -227,6 +247,7 @@ func TestRequestIDMiddlewareGeneratesRequestIDWhenMissing(t *testing.T) {
 	}
 }
 
+// TestRequestIDMiddlewareRegeneratesUnsafeIncomingRequestID verifies unsafe request ID replacement.
 func TestRequestIDMiddlewareRegeneratesUnsafeIncomingRequestID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{HealthChecker: fakeHealthChecker{}})
@@ -246,6 +267,7 @@ func TestRequestIDMiddlewareRegeneratesUnsafeIncomingRequestID(t *testing.T) {
 	}
 }
 
+// TestStructuredLoggingMiddlewareWritesSafeRequestFields verifies structured request log fields.
 func TestStructuredLoggingMiddlewareWritesSafeRequestFields(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	var logs bytes.Buffer
@@ -286,6 +308,7 @@ func TestStructuredLoggingMiddlewareWritesSafeRequestFields(t *testing.T) {
 	}
 }
 
+// TestBrandProfileReturnsApprovedProfile verifies the approved brand profile response.
 func TestBrandProfileReturnsApprovedProfile(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	phone := "02-1234-5678"
@@ -335,6 +358,7 @@ func TestBrandProfileReturnsApprovedProfile(t *testing.T) {
 	}
 }
 
+// TestBrandProfileReturnsNullWhenNoApprovedProfileExists verifies the empty brand profile response.
 func TestBrandProfileReturnsNullWhenNoApprovedProfileExists(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{
@@ -360,6 +384,7 @@ func TestBrandProfileReturnsNullWhenNoApprovedProfileExists(t *testing.T) {
 	}
 }
 
+// TestBrandProfileReturnsSafeUnavailableWhenRepositoryFails verifies the brand profile failure response.
 func TestBrandProfileReturnsSafeUnavailableWhenRepositoryFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{
@@ -395,6 +420,7 @@ func TestBrandProfileReturnsSafeUnavailableWhenRepositoryFails(t *testing.T) {
 	}
 }
 
+// TestFAQsReturnApprovedItems verifies the approved FAQ response.
 func TestFAQsReturnApprovedItems(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{
@@ -440,6 +466,7 @@ func TestFAQsReturnApprovedItems(t *testing.T) {
 	}
 }
 
+// TestFAQsReturnEmptyListWhenNoApprovedItemsExist verifies the empty FAQ response.
 func TestFAQsReturnEmptyListWhenNoApprovedItemsExist(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{
@@ -468,6 +495,7 @@ func TestFAQsReturnEmptyListWhenNoApprovedItemsExist(t *testing.T) {
 	}
 }
 
+// TestFAQsReturnSafeUnavailableWhenRepositoryFails verifies the FAQ failure response.
 func TestFAQsReturnSafeUnavailableWhenRepositoryFails(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := NewRouter(Dependencies{
@@ -477,6 +505,122 @@ func TestFAQsReturnSafeUnavailableWhenRepositoryFails(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 	request := httptest.NewRequest(http.MethodGet, "/api/v1/brand/faqs", nil)
+	request.Header.Set(requestIDHeader, "brand-request-123")
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusServiceUnavailable {
+		t.Fatalf("expected status %d, got %d", http.StatusServiceUnavailable, recorder.Code)
+	}
+
+	var body publicErrorResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if body.Error.Code != "SERVICE_UNAVAILABLE" {
+		t.Fatalf("expected SERVICE_UNAVAILABLE, got %q", body.Error.Code)
+	}
+	if body.Error.Message != "Service unavailable." {
+		t.Fatalf("expected safe message, got %q", body.Error.Message)
+	}
+	if body.RequestID != "brand-request-123" {
+		t.Fatalf("expected request_id brand-request-123, got %q", body.RequestID)
+	}
+	if containsAny(recorder.Body.String(), []string{"sql:", "password=secret"}) {
+		t.Fatalf("response leaked internal details: %s", recorder.Body.String())
+	}
+}
+
+// TestPropertyAvailabilityReturnsApprovedItems verifies the approved property availability response.
+func TestPropertyAvailabilityReturnsApprovedItems(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker: fakeHealthChecker{},
+		PropertyAvailabilityService: fakePropertyAvailabilityService{items: []application.PropertyAvailability{
+			{
+				PropertyID:         "00000000-0000-0000-0000-000000000000",
+				PropertyPublicName: "北車館",
+				Address:            "台北市中正區範例路 1 號",
+				HasVacantRoom:      true,
+			},
+			{
+				PropertyID:         "11111111-1111-1111-1111-111111111111",
+				PropertyPublicName: "南港館",
+				Address:            "台北市南港區範例路 2 號",
+				HasVacantRoom:      false,
+			},
+		}},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/properties/availability", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+
+	var body propertyAvailabilityResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(body.Items) != 2 {
+		t.Fatalf("expected 2 property availability items, got %d", len(body.Items))
+	}
+	if body.Items[0].PropertyID != "00000000-0000-0000-0000-000000000000" {
+		t.Fatalf("expected first property ID, got %q", body.Items[0].PropertyID)
+	}
+	if body.Items[0].PropertyPublicName != "北車館" {
+		t.Fatalf("expected first property public name, got %q", body.Items[0].PropertyPublicName)
+	}
+	if body.Items[0].Address != "台北市中正區範例路 1 號" {
+		t.Fatalf("expected first address, got %q", body.Items[0].Address)
+	}
+	if !body.Items[0].HasVacantRoom {
+		t.Fatal("expected first property to have vacant room")
+	}
+}
+
+// TestPropertyAvailabilityReturnsEmptyListWhenNoApprovedItemsExist verifies the empty property availability response.
+func TestPropertyAvailabilityReturnsEmptyListWhenNoApprovedItemsExist(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker:               fakeHealthChecker{},
+		PropertyAvailabilityService: fakePropertyAvailabilityService{},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/properties/availability", nil)
+
+	router.ServeHTTP(recorder, request)
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, recorder.Code)
+	}
+	if !strings.Contains(recorder.Body.String(), `"items":[]`) {
+		t.Fatalf("expected empty items list, got %s", recorder.Body.String())
+	}
+
+	var body propertyAvailabilityResponse
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if len(body.Items) != 0 {
+		t.Fatalf("expected empty property availability list, got %#v", body.Items)
+	}
+}
+
+// TestPropertyAvailabilityReturnsSafeUnavailableWhenRepositoryFails verifies the property availability failure response.
+func TestPropertyAvailabilityReturnsSafeUnavailableWhenRepositoryFails(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := NewRouter(Dependencies{
+		HealthChecker:               fakeHealthChecker{},
+		PropertyAvailabilityService: fakePropertyAvailabilityService{err: errors.New("sql: password=secret failed")},
+	})
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/api/v1/properties/availability", nil)
 	request.Header.Set(requestIDHeader, "brand-request-123")
 
 	router.ServeHTTP(recorder, request)

@@ -11,7 +11,9 @@ import (
 
 const brandProfileTimeout = 2 * time.Second
 
+// BrandProfileService provides the approved brand profile to HTTP handlers.
 type BrandProfileService interface {
+	// GetBrandProfile returns the approved brand profile.
 	GetBrandProfile(ctx context.Context) (*application.BrandProfile, error)
 }
 
