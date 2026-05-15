@@ -41,7 +41,7 @@ dependencies.
 Minimum staging validation:
 
 - deploy the service image
-- confirm `/healthz`
+- confirm `/health`
 - confirm structured request logs appear in Cloud Logging
 - confirm database connectivity if the deployed version uses SQL
 - run a small read-only smoke request for each public endpoint
@@ -55,7 +55,7 @@ Minimum production validation:
 
 - confirm staging passed
 - deploy the same reviewed code path
-- confirm `/healthz`
+- confirm `/health`
 - run read-only smoke checks
 - inspect recent Cloud Run logs for startup errors and repeated 5xx responses
 
